@@ -434,7 +434,7 @@ void Server::DetermineJobQueryResponse(const zmq::SocketIdentity& clientIdentity
     {
     response.setServiceType(remus::INVALID_SERVICE);
     response.setData( remus::INVALID_MSG );
-    response.send(&this->Zmq->ClientQueries);
+    response.sendNonBlocking(&this->Zmq->ClientQueries);
     return; //no need to continue
     }
   response.setServiceType(msg.serviceType());
@@ -470,7 +470,7 @@ void Server::DetermineJobQueryResponse(const zmq::SocketIdentity& clientIdentity
     default:
       response.setData( remus::to_string(remus::INVALID_STATUS) );
     }
-  response.send(&this->Zmq->ClientQueries);
+  response.sendNonBlocking(&this->Zmq->ClientQueries);
   return;
 }
 
@@ -602,7 +602,7 @@ std::string Server::terminateJob(const remus::proto::Message& msg)
       {
       remus::proto::Response response(worker);
       detail::make_terminateJob(response,job.id());
-      response.send(&this->Zmq->WorkerQueries);
+      response.sendNonBlocking(&this->Zmq->WorkerQueries);
       }
     }
 
@@ -709,7 +709,7 @@ void Server::assignJobToWorker(const zmq::SocketIdentity &workerIdentity,
 
   std::string tmp = remus::worker::to_string(job);
   response.setData(tmp);
-  response.send(&this->Zmq->WorkerQueries);
+  response.sendNonBlocking(&this->Zmq->WorkerQueries);
 }
 
 //see if we have a worker in the pool for the next job in the queue,
@@ -804,7 +804,7 @@ void Server::TerminateAllWorkers( )
     remus::proto::Response response(*i);
     detail::make_terminateWorker(response,jobId);
 
-    response.send(&this->Zmq->WorkerQueries);
+    response.sendNonBlocking(&this->Zmq->WorkerQueries);
     }
 
   //lastly we will kill any still active worker
@@ -820,7 +820,7 @@ void Server::TerminateAllWorkers( )
     remus::proto::Response response(*i);
     detail::make_terminateWorker(response,jobId);
 
-    response.send(&this->Zmq->WorkerQueries);
+    response.sendNonBlocking(&this->Zmq->WorkerQueries);
     }
 
 }
