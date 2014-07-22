@@ -59,7 +59,7 @@ Message::Message(zmq::socket_t* socket):
   socket->getsockopt(ZMQ_RCVMORE, &more, &more_size);
 
   //construct a job message from the socket
-  const bool removedHeader = zmq::removeReqHeader(*socket);
+  const bool removedHeader = zmq::removeReqHeader(*socket, ZMQ_DONTWAIT);
   bool readMeshType = false;
   bool readServiceType = false;
   bool readStorageData = false;
@@ -68,7 +68,7 @@ Message::Message(zmq::socket_t* socket):
   if(removedHeader)
     {
     zmq::message_t meshIOType;
-    readMeshType = zmq::recv_harder(*socket, &meshIOType);
+    readMeshType = zmq::recv_harder(*socket, &meshIOType, ZMQ_DONTWAIT);
     if(readMeshType)
       {
       this->MType = *(reinterpret_cast<remus::common::MeshIOType*>(meshIOType.data()));
@@ -79,7 +79,7 @@ Message::Message(zmq::socket_t* socket):
   if(readMeshType)
     {
     zmq::message_t servType;
-    readServiceType = zmq::recv_harder(*socket, &servType);
+    readServiceType = zmq::recv_harder(*socket, &servType, ZMQ_DONTWAIT);
     if(readServiceType)
       {
       this->SType = *(reinterpret_cast<SERVICE_TYPE*>(servType.data()));
@@ -94,7 +94,9 @@ Message::Message(zmq::socket_t* socket):
     if(haveStorageData)
       {
       //if we have a need for storage construct it now
-      readStorageData = zmq::recv_harder(*socket, this->Storage.get());
+      readStorageData = zmq::recv_harder(*socket,
+                                         this->Storage.get(),
+                                         ZMQ_DONTWAIT);
       }
     }
 
