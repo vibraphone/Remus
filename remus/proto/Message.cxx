@@ -14,8 +14,8 @@
 
 #include <remus/proto/zmq.hpp>
 #include <remus/proto/zmqHelper.h>
-
 #include <boost/make_shared.hpp>
+#include <cstring>
 
 namespace remus{
 namespace proto{
@@ -28,7 +28,7 @@ Message::Message(remus::common::MeshIOType mtype, remus::SERVICE_TYPE stype,
   ValidMsg(true),
   Storage( boost::make_shared<zmq::message_t>(mdata.size()) )
 {
-  memcpy(Storage->data(),mdata.data(),mdata.size());
+  std::memcpy(Storage->data(),mdata.data(),mdata.size());
 }
 
 //----------------------------------------------------------------------------
@@ -41,7 +41,7 @@ Message::Message(remus::common::MeshIOType mtype, remus::SERVICE_TYPE stype,
   ValidMsg(true),
   Storage( boost::make_shared<zmq::message_t>(size) )
 {
-  memcpy(this->Storage->data(),mdata,size);
+  std::memcpy(this->Storage->data(),mdata,size);
 }
 
 //----------------------------------------------------------------------------
@@ -58,7 +58,7 @@ Message::Message(remus::common::MeshIOType mtype, remus::SERVICE_TYPE stype):
 //creates a job message from reading in the socket
 Message::Message(zmq::socket_t* socket)
   {
-//we are receiving a multi part message
+  //we are receiving a multi part message
   //frame 0: REQ header / attachReqHeader does this
   //frame 1: Mesh Type
   //frame 2: Service Type
@@ -167,24 +167,22 @@ bool Message::send_impl(zmq::socket_t *socket, int flags) const
     return false;
     }
 
-  zmq::attachReqHeader(*socket,flags);
+  const bool attached_header = zmq::attachReqHeader(*socket,flags);
 
-  bool valid = true;
+  bool valid = attached_header;
   zmq::message_t meshIOType(sizeof(this->MType));
-  memcpy(meshIOType.data(),&this->MType,sizeof(this->MType));
+  std::memcpy(meshIOType.data(),&this->MType,sizeof(this->MType));
   valid = valid && zmq::send_harder(*socket,meshIOType,flags|ZMQ_SNDMORE);
 
   zmq::message_t service(sizeof(this->SType));
-  memcpy(service.data(),&this->SType,sizeof(this->SType));
+  std::memcpy(service.data(),&this->SType,sizeof(this->SType));
   if(this->dataSize()> 0 && valid)
     {
     //send the service line not as the last line
     valid = zmq::send_harder(*socket,service,flags|ZMQ_SNDMORE);
 
 
-    valid = valid && zmq::send_harder(*socket,
-                                      *this->Storage.get(),
-                                      flags);
+    valid = valid && zmq::send_harder(*socket, *this->Storage, flags);
     }
   else if(valid) //we are done
     {
